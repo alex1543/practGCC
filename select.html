@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Как можно работать с таблицами в MySQL на MinGW (GCC)</title>
+    </head>
+	<style>
+body {
+	font-family: sans-serif;
+	text-align: center;
+}
+table {
+	width: 93%;
+	margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+	border-collapse: collapse;
+	table-layout: fixed;
+}
+tr:nth-child(odd) { 
+	background: #f5f5f5; 
+}
+tr:nth-child(even) { 
+	background: #a39579; 
+}
+tr:first-child { 
+	background: #f5c7a4;
+	font-weight: bold;
+}
+tr {
+	opacity: 0.77;
+}
+tr:nth-child(n+2):hover {
+	color: #fff;
+	cursor: pointer;
+	font-weight: bold;
+	background: #bbbfc0;
+}
+td {
+	padding: 5px;
+    position: relative;
+    border: 1px solid #333;
+    height: 20px;
+}
+td:first-child {
+	width: 35px;
+	text-align: center;
+}
+h1, h1 a, h1 a:visited {
+	color: #f5c7a4;
+    background: #fff;
+	font-size: 30px;
+	font-family: Roboto, Geneva, Arial, Helvetica, sans-serif;
+}
+h1 a:hover {
+	color: #a39579;
+}
+a {
+	text-decoration: none;
+}
+label {
+	font-size: 16px;
+	text-decoration: underline;
+	margin-left: 5px;
+}
+div {
+	display: contents;
+    font-size: 21px;
+    font-weight: bold;
+}
+input[type="submit"] {
+	cursor: pointer;
+}
+input[type="text"] {
+	font-style: italic;
+}
+	</style>
+    <script>
+      function submitForm() {
+        const frm = document.getElementById("submit");
+        frm.submit(); // Submit the form
+        frm.reset();  // Reset all form data
+        return true; // Prevent page refresh
+      }
+    </script>
+    <body>
+        <h1><a href=".">Как можно работать с таблицами в MySQL на MinGW (GCC)</a></h1>
+        <form action="." method="get">
+            <label>Значение</label><div> 1: </div><input type="text" name="col1" placeholder="Первый параметр..." />
+            <label>Значение</label><div> 2: </div><input type="text" name="col2" placeholder="Второй параметр..." />
+            <label>Значение</label><div> 3: </div><input type="text" name="col3" placeholder="Третий параметр..." />
+            <input id="submit" type="submit" value="Добавить" onclick="submitForm()" />
+        </form>
+		<br />
+		<table>
+@tr
+		</table>
+		<p>Версия базы данных: 
+			<b>
+@ver
+			</b>
+		</p>
+    </body>
+</html>
