@@ -7,5 +7,6 @@
 
 Внешний вид Web Server-a:
 
-![image](https://github.com/alex1543/practGCC/assets/10297748/88332821-caa4-4980-a8ff-3e00c372b901)
+![image](https://github.com/alex1543/practGCC/assets/10297748/9722f57b-0807-4f4a-8091-1674a5e0b524)
+
 
