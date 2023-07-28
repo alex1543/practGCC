@@ -10,6 +10,12 @@
 #include <errno.h>
 #pragma comment(lib, "Ws2_32.lib")
 
+// для работы с MySQL
+#include <my_global.h>
+#include <mysql.h>
+#include <errmsg.h>
+#include <mysqld_error.h>
+
 // only Win socket()
 int init() {
 	WSADATA wsaData;
@@ -49,6 +55,116 @@ ssize_t getline(char **linep, size_t *n, FILE *fp) {
 	return !i && ch == EOF ? -1 : i;
 }
 
+char* GetTR() {
+	
+    char server[16] = "localhost";
+    char username[16] = "root";
+    char password[16] = "";
+    char database[16] = "test";
+
+    MYSQL* conn = mysql_init(NULL);
+    MYSQL_ROW record;
+
+    if (conn == NULL) {
+        printf("MySQL initialization failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (mysql_real_connect(conn, server, username, password, database, 0, NULL, 0) == NULL) {
+        printf("Unable to connect with MySQL server\n");
+        mysql_close(conn);
+        exit(EXIT_FAILURE);
+    }
+
+	// заголовок.
+	mysql_query(conn, "SHOW COLUMNS FROM myarttable");
+	MYSQL_RES* rsH = mysql_store_result(conn);
+
+	char* tr_head_out;
+	tr_head_out = "";
+	
+	char* tp = (char*)malloc(strlen(tr_head_out)+strlen("<tr>")+1);
+	strcpy(tp, tr_head_out);
+	strcat(tp, "<tr>");
+	tr_head_out = tp;
+
+    while (record = mysql_fetch_row(rsH)) {
+
+		char* tp = (char*)malloc(strlen(tr_head_out)+strlen("<td>")+1);
+		strcpy(tp, tr_head_out);
+		strcat(tp, "<td>");
+		tr_head_out = tp;
+
+		tp = (char*)malloc(strlen(tr_head_out)+strlen(record[0])+1);
+		strcpy(tp, tr_head_out);
+		strcat(tp, record[0]);
+		tr_head_out = tp;		
+
+		tp = (char*)malloc(strlen(tr_head_out)+strlen("</td>")+1);
+		strcpy(tp, tr_head_out);
+		strcat(tp, "</td>");
+		tr_head_out = tp;
+
+    }
+	
+	tp = (char*)malloc(strlen(tr_head_out)+strlen("</tr>")+1);
+	strcpy(tp, tr_head_out);
+	strcat(tp, "</tr>");
+	tr_head_out = tp;
+
+	printf("head is %s", tr_head_out);	
+	
+	// строки.
+	mysql_query(conn, "SELECT * FROM myarttable WHERE id>14 ORDER BY id DESC");
+    MYSQL_RES* rs = mysql_store_result(conn);
+
+
+	char* tr_out;
+	tr_out = "";
+    while (record = mysql_fetch_row(rs)) {
+		char* tp = (char*)malloc(strlen(tr_out)+strlen("<tr>")+1);
+		strcpy(tp, tr_out);
+		strcat(tp, "<tr>");
+		tr_out = tp;
+
+
+		
+		int i = 0;
+		while (i < sizeof(record)/2) {
+			char* tp = (char*)malloc(strlen(tr_out)+strlen("<td>")+1);
+			strcpy(tp, tr_out);
+			strcat(tp, "<td>");
+			tr_out = tp;
+
+			tp = (char*)malloc(strlen(tr_out)+strlen(record[i])+1);
+			strcpy(tp, tr_out);
+			strcat(tp, record[i]);
+			tr_out = tp;		
+		//	printf(record[i]);
+			
+			tp = (char*)malloc(strlen(tr_out)+strlen("</td>")+1);
+			strcpy(tp, tr_out);
+			strcat(tp, "</td>");
+			tr_out = tp;			
+			
+			i++;
+		}
+
+		tp = (char*)malloc(strlen(tr_out)+strlen("<tr>")+1);
+		strcpy(tp, tr_out);
+		strcat(tp, "</tr>");
+		tr_out = tp;
+    }
+    mysql_close(conn);
+
+	// заголовок + все строки.
+	tp = (char*)malloc(strlen(tr_head_out)+strlen(tr_out)+1);
+	strcpy(tp, tr_head_out);
+	strcat(tp, tr_out);
+	tr_out = tp;
+	
+	return tr_out;
+}
 char* GetHTML() {
 	
 	char* html;
@@ -64,12 +180,31 @@ char* GetHTML() {
         exit(EXIT_FAILURE);
 
     while ((read = getline(&line, &len, fp)) != -1) {
-		char * tp = (char *) malloc(1 + strlen(html)+ strlen(line));
-		strcpy(tp, html);
-		strcat(tp, line);
-		html = tp;
+		
+		// обработка макроса @tr
+		char *ret;
+		ret = strstr(line, "@tr");
+		if (ret) {
+			char* tr;
+			tr = GetTR();
+			char* tp = (char*)malloc(strlen(html)+strlen(tr)+1);
+			strcpy(tp, html);
+			strcat(tp, tr);
+			html = tp;
+			
+			
+		//	printf(line);
+			
+		}
+		
+		if (!ret) {
+			char* tp = (char*)malloc(strlen(html)+strlen(line)+1);
+			strcpy(tp, html);
+			strcat(tp, line);
+			html = tp;
+		}
     }
-	printf("ok");
+	//printf("ok");
 
     fclose(fp);
     if (line)
@@ -120,7 +255,7 @@ void server(int port) {
 	shtml = GetHTML();
 	char clen[33];
 	itoa(strlen(shtml), clen, 10);
-	printf(clen);
+	//printf(clen);
 	char* shead1;
 	shead1 = "HTTP/1.1 200 OK\nContent-length: ";
 	char* shead2;
@@ -134,7 +269,7 @@ void server(int port) {
 	// отправка.
 	int c=send(connected,xx,sizeof(xx),0);
 	printf("\nSTATUS:%d",c);
-	printf("\nSent : %s\n",xx);
+	//printf("\nSent : %s\n",xx);
 	close(sock);
 	WSACleanup();
 }
