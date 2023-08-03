@@ -5,7 +5,8 @@
 
 Внешний вид Web Server-a и таблицы из MariaDB:
 
-![image](https://github.com/alex1543/practGCC/assets/10297748/05771cf0-a514-4eae-b3ab-3ce0aaa6debf)
+![image](https://github.com/alex1543/practGCC/assets/10297748/a95fcefc-eebd-4f23-a21a-51f8f4fb5b35)
+
 
 
 Для работы с MySQL или MariaDB не обязательно устанавливать драйвер mariadb-native-client-2.0.0-win64.msi с сайта https://mariadb.org/download/?t=connector&o=true&p=connector-c&r=2.0.0&os=windows&cpu=x86_64 пример и так скомпиллируется.
