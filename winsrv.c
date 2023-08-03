@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// для работы сайта (Web Server)
 #include <winsock2.h> // #include<sock.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -31,6 +32,7 @@ void clean() {
 	WSACleanup();
 }
 
+// построчное чтение файла (любого).
 ssize_t getline(char **linep, size_t *n, FILE *fp) {
 	int ch; size_t i = 0; if (!linep || !n || !fp) { return -1; } 
 	if (*linep == NULL) { if (NULL == (*linep = malloc(*n = 128))) { *n = 0; return -1; } }
@@ -55,7 +57,16 @@ ssize_t getline(char **linep, size_t *n, FILE *fp) {
 	return !i && ch == EOF ? -1 : i;
 }
 
-char* GetTR() {
+// сложение двух строк типа char*
+char* cp(char *st, char *apx) {
+	char* tp = (char*)malloc(strlen(st)+strlen(apx)+1);
+	strcpy(tp, st);
+	strcat(tp, apx);
+	return tp;
+}
+
+// получение объекта подкл.
+MYSQL* GetConn() {
 	
     char server[16] = "localhost";
     char username[16] = "root";
@@ -63,7 +74,6 @@ char* GetTR() {
     char database[16] = "test";
 
     MYSQL* conn = mysql_init(NULL);
-    MYSQL_ROW record;
 
     if (conn == NULL) {
         printf("MySQL initialization failed");
@@ -76,141 +86,87 @@ char* GetTR() {
         exit(EXIT_FAILURE);
     }
 
+	return conn;
+}
+
+// получение заголовка и строк таблицы.
+char* GetTR() {
+	
+	MYSQL* conn = GetConn();
+    MYSQL_ROW record;
+
 	// заголовок.
 	mysql_query(conn, "SHOW COLUMNS FROM myarttable");
 	MYSQL_RES* rsH = mysql_store_result(conn);
 
-	char* tr_head_out;
-	tr_head_out = "";
-	
-	char* tp = (char*)malloc(strlen(tr_head_out)+strlen("<tr>")+1);
-	strcpy(tp, tr_head_out);
-	strcat(tp, "<tr>");
-	tr_head_out = tp;
-
+	char* tr_head_out = "";
+	tr_head_out = cp(tr_head_out, "<tr>");
     while (record = mysql_fetch_row(rsH)) {
-
-		char* tp = (char*)malloc(strlen(tr_head_out)+strlen("<td>")+1);
-		strcpy(tp, tr_head_out);
-		strcat(tp, "<td>");
-		tr_head_out = tp;
-
-		tp = (char*)malloc(strlen(tr_head_out)+strlen(record[0])+1);
-		strcpy(tp, tr_head_out);
-		strcat(tp, record[0]);
-		tr_head_out = tp;		
-
-		tp = (char*)malloc(strlen(tr_head_out)+strlen("</td>")+1);
-		strcpy(tp, tr_head_out);
-		strcat(tp, "</td>");
-		tr_head_out = tp;
-
+		tr_head_out = cp(tr_head_out, "<td>");
+		tr_head_out = cp(tr_head_out, record[0]);
+		tr_head_out = cp(tr_head_out, "</td>");
     }
-	
-	tp = (char*)malloc(strlen(tr_head_out)+strlen("</tr>")+1);
-	strcpy(tp, tr_head_out);
-	strcat(tp, "</tr>");
-	tr_head_out = tp;
-
+	tr_head_out = cp(tr_head_out, "</tr>");
 	printf("head is %s", tr_head_out);	
 	
 	// строки.
 	mysql_query(conn, "SELECT * FROM myarttable WHERE id>14 ORDER BY id DESC");
     MYSQL_RES* rs = mysql_store_result(conn);
 
-
-	char* tr_out;
-	tr_out = "";
+	char* tr_out = "";
     while (record = mysql_fetch_row(rs)) {
-		char* tp = (char*)malloc(strlen(tr_out)+strlen("<tr>")+1);
-		strcpy(tp, tr_out);
-		strcat(tp, "<tr>");
-		tr_out = tp;
-
-
-		
+		tr_out = cp(tr_out, "<tr>");
 		int i = 0;
 		while (i < sizeof(record)/2) {
-			char* tp = (char*)malloc(strlen(tr_out)+strlen("<td>")+1);
-			strcpy(tp, tr_out);
-			strcat(tp, "<td>");
-			tr_out = tp;
-
-			tp = (char*)malloc(strlen(tr_out)+strlen(record[i])+1);
-			strcpy(tp, tr_out);
-			strcat(tp, record[i]);
-			tr_out = tp;		
-		//	printf(record[i]);
-			
-			tp = (char*)malloc(strlen(tr_out)+strlen("</td>")+1);
-			strcpy(tp, tr_out);
-			strcat(tp, "</td>");
-			tr_out = tp;			
-			
+			tr_out = cp(tr_out, "<td>");
+			tr_out = cp(tr_out, record[i]);
+			tr_out = cp(tr_out, "</td>");			
 			i++;
 		}
-
-		tp = (char*)malloc(strlen(tr_out)+strlen("<tr>")+1);
-		strcpy(tp, tr_out);
-		strcat(tp, "</tr>");
-		tr_out = tp;
+		tr_out = cp(tr_out, "</tr>");
     }
     mysql_close(conn);
 
 	// заголовок + все строки.
-	tp = (char*)malloc(strlen(tr_head_out)+strlen(tr_out)+1);
-	strcpy(tp, tr_head_out);
-	strcat(tp, tr_out);
-	tr_out = tp;
-	
-	return tr_out;
+	return cp(tr_head_out, tr_out);
 }
+
+// получение версии.
+char* GetVER() {
+	MYSQL* conn = GetConn();
+    MYSQL_ROW record;
+
+	// в одну ячейку.
+	mysql_query(conn, "SELECT VERSION() AS ver");
+	MYSQL_RES* rs = mysql_store_result(conn);
+
+	record = mysql_fetch_row(rs);
+    mysql_close(conn);
+	return record[0];
+}
+
+// получение всего массива на основе шпблона.
 char* GetHTML() {
-	
-	char* html;
-	html = "";
-	
-    FILE * fp;
-    char * line = NULL;
+	char* html = "";
+    FILE* fp = fopen("select.html", "r");
+    if (fp == NULL) exit(EXIT_FAILURE);
+    char* line = NULL;
     size_t len = 0;
     ssize_t read;
-
-    fp = fopen("select.html", "r");
-    if (fp == NULL)
-        exit(EXIT_FAILURE);
-
+	
     while ((read = getline(&line, &len, fp)) != -1) {
+		// обработка макросов: @tr и @ver
+		if (strstr(line, "@tr")!=0) html = cp(html, GetTR());
+		if (strstr(line, "@ver")!=0) html = cp(html, GetVER());
 		
-		// обработка макроса @tr
-		char *ret;
-		ret = strstr(line, "@tr");
-		if (ret) {
-			char* tr;
-			tr = GetTR();
-			char* tp = (char*)malloc(strlen(html)+strlen(tr)+1);
-			strcpy(tp, html);
-			strcat(tp, tr);
-			html = tp;
-			
-			
-		//	printf(line);
-			
-		}
-		
-		if (!ret) {
-			char* tp = (char*)malloc(strlen(html)+strlen(line)+1);
-			strcpy(tp, html);
-			strcat(tp, line);
-			html = tp;
-		}
+		if ((strstr(line, "@tr")==0) && (strstr(line, "@ver")==0)) html = cp(html, line);
     }
-	//printf("ok");
-
     fclose(fp);
-    if (line)
-        free(line);
+    if (line) free(line);
 	return html;
 }
+
+// запуск Web Server.
 void server(int port) {
 	int sock, connected, bytes_recieved, true = 1;  
 	char send_data [1024], recv_data[1024];       
@@ -251,15 +207,12 @@ void server(int port) {
 	printf("\n Received:%s",kk); 
 	
 	// формирование полного ответа.
-	char* shtml;
-	shtml = GetHTML();
+	char* shtml = GetHTML();
 	char clen[33];
 	itoa(strlen(shtml), clen, 10);
 	//printf(clen);
-	char* shead1;
-	shead1 = "HTTP/1.1 200 OK\nContent-length: ";
-	char* shead2;
-	shead2 = "\nContent-Type: text/html\n\n";
+	char* shead1 = "HTTP/1.1 200 OK\nContent-length: ";
+	char* shead2 = "\nContent-Type: text/html\n\n";
 	char xx[9999];
     strcpy(xx, shead1);
 	strcat(xx, clen);
@@ -278,7 +231,10 @@ void server(int port) {
 int main(int argc, char **argv) {
 	while(1) {
 		init();
-		server(atoi(argv[1]));
+		int port = 8081; // порт по умолчанию, но можно поменять (первый параметр).
+		if (argc > 1) port = atoi(argv[1]);
+		printf("\nargc: %i, port: %i", argc, port);
+		server(port);
 		clean();
 	}
 	
