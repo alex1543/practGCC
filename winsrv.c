@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <errno.h>
 #pragma comment(lib, "Ws2_32.lib")
+#include "qs_parse/qs_parse.c"
 
 // для работы с MySQL
 #include <my_global.h>
@@ -145,6 +146,27 @@ char* GetVER() {
 	return record[0];
 }
 
+char *subString(char *someString, int n) {
+   char *new = malloc(sizeof(char)*(n+1));
+   strncpy(new, someString, n);
+   new[n] = '\0';
+   return new;
+}
+void Insert(char* col1, char* col2, char* col3) {
+	// формирование одной строки запроса INSERT.
+	char* strInsert = cp("INSERT INTO myarttable (text, description, keywords) VALUES ('", col1);
+	strInsert = cp(strInsert, "','");
+	strInsert = cp(strInsert, col2);
+	strInsert = cp(strInsert, "','");
+	strInsert = cp(strInsert, col3);
+	strInsert = cp(strInsert, "')\n");
+	printf(strInsert);
+	
+	MYSQL* conn = GetConn();
+	mysql_query(conn, strInsert);
+    mysql_close(conn);
+}
+
 // получение всего массива на основе шпблона.
 char* GetHTML() {
 	char* html = "";
@@ -168,10 +190,8 @@ char* GetHTML() {
 
 // запуск Web Server.
 void server(int port) {
-	int sock, connected, bytes_recieved, true = 1;  
-	char send_data [1024], recv_data[1024];       
 	struct sockaddr_in server_addr,client_addr;    
-	int sin_size;
+	int sock, connected, sin_size;
         
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 		perror("Socket");
@@ -202,9 +222,22 @@ void server(int port) {
 	fflush(stdout);
 	sin_size = sizeof(struct sockaddr_in);
 	connected = accept(sock, (struct sockaddr *)&client_addr,&sin_size);
-	char kk[9999];
-	recv(connected,kk,sizeof(kk),0);
-	printf("\n Received:%s",kk); 
+	char getstring[9999];
+	recv(connected,getstring,sizeof(getstring),0);
+	printf("\n Received: %s", getstring);
+	
+	// получение первой строки: GET /?col1=111&col2=222&col3=333 HTTP/1.1
+	long position = strstr(getstring, " HTTP")-getstring;
+	printf("pos=%i\n", position);
+	char* oneStrPar = subString(getstring, position);
+	printf("One str pars: %s\n", oneStrPar);
+	char col1[256]; char col2[256]; char col3[256];
+	if ((qs_scanvalue("col1", oneStrPar, col1, sizeof(col1)) != NULL) &&
+		(qs_scanvalue("col2", oneStrPar, col2, sizeof(col2)) != NULL) &&
+		(qs_scanvalue("col3", oneStrPar, col3, sizeof(col3)) != NULL))
+        Insert(col1, col2, col3);
+	
+	
 	
 	// формирование полного ответа.
 	char* shtml = GetHTML();
