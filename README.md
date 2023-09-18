@@ -11,4 +11,4 @@
 
 Для работы с MySQL или MariaDB не обязательно устанавливать драйвер mariadb-native-client-2.0.0-win64.msi с сайта https://mariadb.org/download/?t=connector&o=true&p=connector-c&r=2.0.0&os=windows&cpu=x86_64 пример и так скомпиллируется.
 
-Для работы примера на C++ требуется установить MinGW (GCC), либо скопировать библиотеки: libstdc++-6.dll, libgcc_s_seh-1.dll, libwinpthread-1.dll в каталог с программой на C++.
+Для работы примера на C++ требуется установить MinGW (GCC), либо скопировать библиотеки: libstdc++-6.dll, libgcc_s_seh-1.dll, libwinpthread-1.dll в каталог с программой на C++. После запуска WebServer.exe нужно открыть страницу http://localhost:8080
